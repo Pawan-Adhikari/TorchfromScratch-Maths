@@ -3,7 +3,7 @@ import itertools
 
 class tensor:
     def __init__(self, fromArray=np.zeros((2,2)), _children = (), _operation = ''):
-        fromArray = fromArray if isinstance(fromArray, np.ndarray) else np.array(fromArray, dtype = np.float32)
+        fromArray = fromArray if isinstance(fromArray, np.ndarray) else np.array(fromArray)
         #assert len(fromArray.shape) == 2, "Only 2D Tensors or Scalar to 2D Supported!"
         self.matrix = fromArray
         #self.rows = fromArray.shape[0]
@@ -53,8 +53,8 @@ class tensor:
         out_matrix = self.matrix + other.matrix
 
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
-            other.grad = np.zeros_like(other.matrix, dtype = np.float32) if other.grad is None else other.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
+            other.grad = np.zeros_like(other.matrix) if other.grad is None else other.grad
             out1 = self.return_unbroadcasted(out)
             out2 = other.return_unbroadcasted(out)
             self.grad += out1 #Derivation in the notes. 
@@ -80,8 +80,8 @@ class tensor:
         other = self.checkOther(other)
         out_matrix = self.matrix * other.matrix
         def _backward():
-            self.grad = np.zeros_like(out.grad, dtype = np.float32) if self.grad is None else self.grad
-            other.grad = np.zeros_like(out.grad, dtype = np.float32) if other.grad is None else other.grad
+            self.grad = np.zeros_like(out.grad) if self.grad is None else self.grad
+            other.grad = np.zeros_like(out.grad) if other.grad is None else other.grad
             out1 = self.return_unbroadcasted(out)
             out2 = other.return_unbroadcasted(out)
             self.grad += out1* other.matrix #Derivation in the notes. 
@@ -108,8 +108,8 @@ class tensor:
         assert other.shape[-2] == self.shape[-1], "Dimension Unsupported for @"
         out_matrix = self.matrix @ other.matrix
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
-            other.grad = np.zeros_like(other.matrix, dtype = np.float32) if other.grad is None else other.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
+            other.grad = np.zeros_like(other.matrix) if other.grad is None else other.grad
             self.grad += out.grad @ (other.matrix).swapaxes(-2,-1)#Derivation in the notes.
             other.grad += (self.matrix).swapaxes(-2,-1) @ out.grad 
         out = tensor(out_matrix, (self, other), '@')
@@ -128,7 +128,7 @@ class tensor:
         out_matrix = self.matrix.swapaxes(axis1, axis2)
         
         def _backward():
-            self.grad = np.zeros_like(out.grad.swapaxes(axis1,axis2), dtype = np.float32) if self.grad is None else self.grad
+            self.grad = np.zeros_like(out.grad.swapaxes(axis1,axis2)) if self.grad is None else self.grad
             self.grad += (out.grad).swapaxes(axis1,axis2) #Not in note, but can be derived similarly.
 
         out = tensor(out_matrix, (self, ), 'T')
@@ -140,7 +140,7 @@ class tensor:
         out_matrix = self.matrix.transpose()
         
         def _backward():
-            self.grad = np.zeros_like(out.grad.transpose(), dtype = np.float32) if self.grad is None else self.grad
+            self.grad = np.zeros_like(out.grad.transpose()) if self.grad is None else self.grad
             self.grad += (out.grad).transpose() #Not in note, but can be derived similarly.
 
         out = tensor(out_matrix, (self, ), 'T')
@@ -157,7 +157,7 @@ class tensor:
         out_matrix = self.matrix ** N
 
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
             out1 = self.return_unbroadcasted(out)
             self.grad += N * (self.matrix ** (N-1)) * out1
         
@@ -176,8 +176,8 @@ class tensor:
         out_matrix = np.array(([[self.matrix.sum()]]))
 
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
-            self.grad += np.ones_like(self.matrix, dtype = np.float32) * out.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
+            self.grad += np.ones_like(self.matrix) * out.grad
 
         out = tensor(out_matrix, _children=(self, ), _operation='sum()')
         out._backward = _backward
@@ -188,8 +188,8 @@ class tensor:
         out_matrix = np.array(([[self.matrix.sum()/(N)]]))
 
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
-            self.grad += np.ones_like(self.matrix, dtype = np.float32) * out.grad / N
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
+            self.grad += np.ones_like(self.matrix) * out.grad / N
 
         out = tensor(out_matrix, _children=(self, ), _operation='mean()')
         out._backward = _backward
@@ -199,7 +199,7 @@ class tensor:
         out_matrix = np.maximum(0,self.matrix)
 
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
             self.grad += (self.matrix > 0).astype(self.matrix.dtype) * out.grad
 
         out = tensor(out_matrix, (self, ), "ReLU")
@@ -211,7 +211,7 @@ class tensor:
         out_matrix = self.matrix.reshape(shape)
 
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
             self.grad += out.grad.reshape(self.shape)
 
         out = tensor(out_matrix, (self, ), "reshape()")
@@ -222,7 +222,7 @@ class tensor:
         out_matrix = self.matrix.reshape(-1,np.prod(self.shape[1:]))
 
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
             self.grad += out.grad.reshape(self.shape)
 
         out = tensor(out_matrix, (self, ), "flatten()")
@@ -264,7 +264,7 @@ class tensor:
         self.grad = None
         
     def backward(self):
-        self.grad = np.ones_like(self.matrix, dtype = np.float32)
+        self.grad = np.ones_like(self.matrix, dtype=float)
         topo = []
         visited = set()
         def build_topo(v):
@@ -279,11 +279,25 @@ class tensor:
 
             current._backward()
 
+    def cleanBackward(self):
+        topo = []
+        visited = set()
+        def build_topo(v):
+            if v not in visited:
+                visited.add(v)
+                for child in v._prev: build_topo(child)
+                topo.append(v)
+        build_topo(self)
+
+        for t in topo:
+            t._prev = ()
+            t._backward = lambda: None
+
     def exp(self):
         out_matrix = np.exp(self.matrix)
         
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
             self.grad += out_matrix * out.grad  
         
         out = tensor(out_matrix, (self,), 'exp')
@@ -295,7 +309,7 @@ class tensor:
         out_matrix = np.log(clipped)
         
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
             self.grad += (1.0 / clipped) * out.grad 
         
         out = tensor(out_matrix, (self,), 'log')
@@ -306,7 +320,7 @@ class tensor:
         out_matrix = np.exp(self.matrix) / np.sum(np.exp(self.matrix), axis = axis, keepdims=True)
 
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
             self.grad += out_matrix*(out.grad - np.sum(out_matrix * out.grad, axis = axis, keepdims=True))
 
         out = tensor(out_matrix, (self, ), 'softmax')
@@ -318,11 +332,25 @@ class tensor:
         softmax = np.exp(self.matrix) / np.sum(np.exp(self.matrix), axis = axis, keepdims=True)
 
         def _backward():
-            self.grad = np.zeros_like(self.matrix, dtype = np.float32) if self.grad is None else self.grad
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
             self.grad += out.grad - softmax * np.sum(out.grad, axis = axis, keepdims= True)
 
         out = tensor(out_matrix, (self, ), 'log-softmax')
         out._backward = _backward
         return out
 
+    def padding(self, pad_h, pad_w):
+        np_padding = ((0, 0), (0, 0), (pad_h, pad_h), (pad_w, pad_w))
+        out_matrix = np.pad(self.matrix, np_padding, 'constant', constant_values=(0, ))
+
+        def _backward():
+            self.grad = np.zeros_like(self.matrix) if self.grad is None else self.grad
+            h_end = -pad_h if pad_h > 0 else None
+            w_end = -pad_w if pad_w > 0 else None
+            self.grad += out.grad[:, :, pad_h:h_end, pad_w:w_end]
+
+        out = tensor(out_matrix, _children=(self, ), _operation='pad')
+        out._backward = _backward
+        return out
+    
     __array_ufunc__ = None

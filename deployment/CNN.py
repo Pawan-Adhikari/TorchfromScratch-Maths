@@ -1,5 +1,6 @@
 import numpy as np
-import tensor
+from tensor import tensor
+from memory_profiler import profile
 
 class Conv2d:
     def __init__(self, in_channels=1, out_channels=1, kernel_size=2, stride=1):
@@ -214,6 +215,7 @@ class CNN:
         #loss = ((ytrue * cross_entropy).sum())
         return loss
 
+    @profile
     def fit(self, X_train, y_train, epochs = 10, lr = 0.001, batch_size = 32):
         lossT = []
         for epoch in range(epochs):
@@ -236,9 +238,12 @@ class CNN:
                         #param.matrix -= lr * grad_clipped
                         param.matrix -= lr * param.grad
                         param.grad = None
-                
+
                 epoch_loss += ce_loss.matrix.flatten()[0]
                 n_batches += 1
+                # Clean up
+                ce_loss.cleanBackward()
+                del xb, yb, y_predicted, ce_loss
             
             avg_loss = epoch_loss / n_batches    
             print(f"Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.6f}")

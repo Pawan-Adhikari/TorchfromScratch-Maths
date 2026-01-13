@@ -24,7 +24,7 @@ Y_train[np.arange(y_train.size), y_train] = 1
 Y_test = np.zeros((y_test.size, 10), dtype=np.float32)
 Y_test[np.arange(y_test.size), y_test] = 1
 
-model = CNN(
+model = CNN.CNN(
     in_channels=3,
     layers=2,
     kernels_in_layers= (5, 16, ),
@@ -36,7 +36,7 @@ model = CNN(
 )
 
 #We will be training on 1/10th of the total dataset.
-loss = model.fit(X_train[:100], Y_train[:100], epochs=100, lr=0.08, batch_size=24)
+loss = model.fit(X_train[:1000], Y_train[:1000], epochs=100, lr=0.07, batch_size=32)
 
 #Plot Train Loss vs Epochs graph.
 epochs, losses = zip(*loss)
