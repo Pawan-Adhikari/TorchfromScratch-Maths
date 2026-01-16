@@ -1,4 +1,5 @@
 .venv/
 activate/
 data/
-000139/
+.DS_Store
+mprofile_20260113122205.dat
