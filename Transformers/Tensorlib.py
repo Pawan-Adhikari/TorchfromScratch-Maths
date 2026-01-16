@@ -28,7 +28,7 @@ class tensor:
     @classmethod
     def random(cls, shape, dtype = np.float32):
         t = tensor()
-        t.matrix = (np.random.randn(*shape) * 0.1).astype(dtype=dtype)
+        t.matrix = (np.random.randn(*shape) * 0.02).astype(dtype=dtype) #0.02 = GPT-2 style
         t.shape = shape
         return t
     
