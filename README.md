@@ -1,6 +1,6 @@
-# ML-maths
+# TorchfromScratch-Maths
 
-This repository contains code, notebooks, and resources for understanding and implementing core mathematical concepts in Deep Learning. It is organized into modules covering traditional machine learning, perceptrons, autograd, MLPs, tensors, CNNs, transformers, and deployment tests.
+This repository contains code, notebooks, and resources for understanding and implementing core mathematical concepts in Deep Learning. It is basically a custom Deep Learning Framework similar to pytorch, but on CPU. It is organized into modules covering traditional machine learning, perceptrons, autograd, MLPs, tensors, CNNs, transformers, and deployment tests.
 
 ## Structure
 - **00_Traditional_ML/**: Linear regression and classic ML algorithms
