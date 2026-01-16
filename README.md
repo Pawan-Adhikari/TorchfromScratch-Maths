@@ -8,7 +8,7 @@ This repository contains code, notebooks, and resources for understanding and im
 - **02_Scalar_Autograd/**: Micrograd autograd implementation
 - **03_Scalar_MLP/**: Scalar MLP examples
 - **04_Tensor_Class/**: Tensor class and related notebooks
-- **05_Tensor_MLP/FCN/**: Fully connected network and housing dataset
+- **05_Tensor_MLP/**: Fully connected network / Multi Layer Perceptron and housing dataset on tensor autograd
 - **06_CNN_Vectorised/**: CNN models, training, and notes
 - **07_Transformers/**: Transformer models, tensor library, and handwritten notes
 - **99_Deployment_Tests/**: Deployment scripts and tests
