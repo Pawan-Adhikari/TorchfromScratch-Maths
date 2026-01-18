@@ -1,7 +1,7 @@
 # MLMaths-TorchfromScratch
 
 This repository contains code, notebooks, and resources for understanding and implementing core mathematical concepts in Deep Learning. It is basically a custom Deep Learning engine similar to pytorch, but on CPU. It is organized into modules covering traditional machine learning, perceptrons, autograd, MLPs, tensors, CNNs, transformers, and deployment tests.
-Most of the operations and their upstream gradients are derived by hand, using pen and paper. I've kept almost all operations vectorised and avoided naive loops. Memory leaks and performance tweaks were also checked. Since we are constrained to CPU training and NumPy has an additional overhead, both the performance and memory efficiency takes some toll. Besides the tensor stuff, we also have the early scalar based implementations which are excellent pedagogical tools to understand internals of deep learning.
+Most of the operations and their upstream gradients are derived by hand, using pen and paper. I've kept almost all operations vectorised avoiding naive loops. Memory leaks and performance tweaks were also checked. Since we are constrained to CPU training and NumPy has an additional overhead, both the performance and memory efficiency take some toll. Besides the tensor stuff, we also have the early scalar based implementations which are excellent pedagogical tools to understand internals of deep learning.
 
 
 ## Structure
