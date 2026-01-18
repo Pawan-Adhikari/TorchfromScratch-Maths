@@ -113,7 +113,7 @@ class MultiHeadedSelfAttention:
         self.num_heads = num_heads
         self.causal_masking = causal_masking
 
-    def __call__(self, in_em: tensor):
+    def __call__(self, in_em: tensor, returnAttention=False):
 
         batch, tokens, dims = in_em.shape
 
@@ -141,13 +141,19 @@ class MultiHeadedSelfAttention:
             mask = np.triu(np.full(shape=(1, 1, tokens, tokens), fill_value=-np.inf, dtype=np.float32), k=1)
             scores = scores + tensor(mask)
 
-        Attention = scores.softmax() @ V  #Shape = (batch, number_of_heads, tokens, dims_per_head)
+        Attention_Probs = scores.softmax()
+
+        Attention = Attention_Probs @ V  #Shape = (batch, number_of_heads, tokens, dims_per_head)
 
         output = Attention.swap_axes(1, 2) #Shape = (batch, tokens, number_of_heads, dims_per_head)
 
         output = output.reshape(shape=(batch, tokens, dims)) #Shape = (batch, tokens, dims)
 
         output = output @ self.Wo #Shape = (batch, tokens, dims)
+
+
+        if returnAttention:
+            return Attention_Probs.matrix, output
 
         return output #Shape = (batch, tokens, dims)
     
@@ -335,19 +341,18 @@ class GPT:
         params = self.parameters()
 
         epoch_gap = 0
-
         adam_state = [{} for _ in params]
-
         data_len = len(Encoded_Data)
         num_batches = (data_len - self.context_length) // batch
 
         for epoch in range(epochs):
             #We have to create batches of encoded data as per the specified context_length.
-            #
             #x_b, y_b = GPT._get_batch(Encoded_Data, batch, self.context_length) #Shapes: x_b: (batch * tokens), y_b: (batch * tokens)
             starts = np.arange(data_len - self.context_length)
             np.random.shuffle(starts)
             for i in range(0, len(starts), batch):
+
+                #We are essentially batching such that the entire dataset is covered, with stride = 1, per epoch.
                 batch_starts = starts[i:i+batch]
                 idx = np.arange(self.context_length)[None, :] + batch_starts[:, None]
                 x_b = Encoded_Data[idx]
@@ -364,20 +369,27 @@ class GPT:
 
                 losses.append((epoch, loss.matrix.item()))
 
+                #This is the normal SGD optimization
                 '''for param in params:
                     param.matrix -= learning_rate*param.grad
                     param.zero_grad()
                     param.cleanBackward()'''
                 
+
+                #Optimizing the parameters with Adam Optimizer.
                 GPT.adam_step(params, adam_state, lr=learning_rate)
+
+
+                #Zero Grad-ing and cleaning the computational graph.
                 for param in params:
                     param.zero_grad()
                     param.cleanBackward()
 
+                #Clearning the loss computational graph and also deleting the unused tensors
                 loss.cleanBackward()
                 del loss, logits, x_b, y_b
 
-
+                #Both learning rate scheduler and model saver.
                 if epoch_gap > 1000:
                     #learning_rate *= 0.5
                     self.save_model(f"Shakespearian_model_{epoch}.npz")
@@ -397,18 +409,14 @@ class GPT:
         else:
             raise ValueError("start_token must be str, list, or np.ndarray")
 
-        for _ in range(max_tokens_generated):
-            input_tokens = context[-self.context_length:] if len(context) > self.context_length else context
-            '''if len(input_tokens) < self.context_length:
-                pad_token = 0  # or self.tokenizer.stoi.get('<pad>', 0)
-                input_tokens = [pad_token] * (self.context_length - len(input_tokens)) + input_tokens'''
-            
-            x = tensor(np.array([input_tokens]))  # shape: (1, context_length)
-            logits = self(x)  # shape: (1, context_length, vocab_size)
-            last_logits = logits.matrix[0, -1]  # shape: (vocab_size,)
-            probs = np.exp(last_logits / temperature)
-            probs /= np.sum(probs)
-            next_token = int(np.random.choice(len(probs), p=probs))
-            context.append(next_token)
+        for _ in range(max_tokens_generated):   
+            input_tokens = context[-self.context_length:] if len(context) > self.context_length else context #Return the last context length-ed slice
+            x = tensor(np.array([input_tokens]))  #shape: (1, context_length)
+            logits = self(x)  #shape: (1, context_length, vocab_size)
+            last_logits = logits.matrix[0, -1]  #shape: (vocab_size,) #Picking the last row of output matrix
+            probs = np.exp(last_logits / temperature) #shape: (vocab_size,)
+            probs /= np.sum(probs) #shape: (vocab_size,) #Softmaxing to get probability distribution
+            next_token = int(np.random.choice(len(probs), p=probs)) # Returns a random index based on probability distribution p = probs
+            context.append(next_token) 
 
         return self.tokenizer.decode(context)

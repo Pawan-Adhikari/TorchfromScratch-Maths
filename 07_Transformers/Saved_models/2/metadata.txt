@@ -1,0 +1,9 @@
+gpt = GPT(
+    vocab_size=65,
+    context_length=128,
+    emb_dim=128,
+    num_heads=16,
+    num_layers=6
+)
+
+gpt.load_model(data=data, filename="Shakespearean_best.npz")
