@@ -3,7 +3,7 @@ import itertools
 
 class tensor:
     def __init__(self, fromArray=np.zeros((2,2)), _children = (), _operation = ''):
-        fromArray = fromArray if isinstance(fromArray, np.ndarray) else np.array(fromArray)
+        fromArray = fromArray if isinstance(fromArray, np.ndarray) else np.array(fromArray, copy=True)
         #assert len(fromArray.shape) == 2, "Only 2D Tensors or Scalar to 2D Supported!"
         self.matrix = fromArray
         #self.rows = fromArray.shape[0]
@@ -85,14 +85,14 @@ class tensor:
         out_matrix = self.matrix * other.matrix
         def _backward(grad):
             if self.grad is None:
-                self.grad = self.return_unbroadcasted(grad) * other.matrix #Derivation in the notes.
+                self.grad = self.return_unbroadcasted(grad * other.matrix) #Derivation in the notes.
             else:
-                self.grad += self.return_unbroadcasted(grad) * other.matrix
+                self.grad += self.return_unbroadcasted(grad * other.matrix)
 
             if other.grad is None:
-                other.grad = other.return_unbroadcasted(grad) * self.matrix
+                other.grad = other.return_unbroadcasted(grad * self.matrix)
             else:
-                other.grad += other.return_unbroadcasted(grad) * self.matrix
+                other.grad += other.return_unbroadcasted(grad * self.matrix)
 
         out = tensor(out_matrix, (self, other), '*')
         out._backward = _backward
@@ -100,7 +100,7 @@ class tensor:
     
     def __rmul__(self, other):
         other = self.checkOther(other)
-        return self*other
+        return self * other
     
     '''
     batch multiplication might cause shape broadcasts.
@@ -121,9 +121,9 @@ class tensor:
                 self.grad += self.return_unbroadcasted(grad @ (other.matrix).swapaxes(-2,-1))
 
             if other.grad is None:
-                other.grad = self.return_unbroadcasted((self.matrix).swapaxes(-2,-1) @ grad)
+                other.grad = other.return_unbroadcasted((self.matrix).swapaxes(-2,-1) @ grad)
             else:
-                other.grad += self.return_unbroadcasted((self.matrix).swapaxes(-2,-1) @ grad)
+                other.grad += other.return_unbroadcasted((self.matrix).swapaxes(-2,-1) @ grad)
 
         out = tensor(out_matrix, (self, other), '@')
         out._backward = _backward
@@ -206,17 +206,77 @@ class tensor:
         out._backward = _backward
         return out
 
-    def mean(self):
-        N = np.prod(self.shape)
-        out_matrix = np.array(([[self.matrix.sum()/(N)]]))
+    ''' def mean(self, axis=None, keepdims=False):
+
+        if axis is None:
+            N = np.prod(self.shape)
+        else:
+            N = self.shape[axis]
+
+        out_matrix = self.matrix.mean(axis=axis, dtype=np.float32, keepdims=keepdims)
 
         def _backward(grad):
-            if self.grad is None:
-                self.grad = np.ones_like(self.matrix) * grad / N
+
+            if axis is None:
+                broadcasted_grad = np.broadcast_to(grad/N, shape = self.shape)
             else:
-                self.grad += np.ones_like(self.matrix) * grad / N
+                broadcasted_grad = np.broadcast_to(grad.mean(axis=axis, dtype=np.float32, keepdims=keepdims), shape = self.shape)
+
+            if self.grad is None:
+                self.grad = broadcasted_grad
+            else:
+                self.grad +=  broadcasted_grad
 
         out = tensor(out_matrix, _children=(self, ), _operation='mean()')
+        out._backward = _backward
+        return out
+    '''
+
+    def mean(self, axis=None, keepdims=False):
+        out_matrix = self.matrix.mean(axis=axis, dtype=np.float32, keepdims=keepdims)
+        if axis is None:
+            N = np.prod(self.shape)
+        else:
+            if isinstance(axis, int):
+                N = self.shape[axis]
+            else:
+                N = np.prod([self.shape[a] for a in (axis if isinstance(axis, tuple) else (axis,))])
+        def _backward(grad):
+            grad_broadcast = grad
+            if not keepdims and axis is not None:
+                grad_broadcast = np.expand_dims(grad, axis=axis)
+            grad_broadcast = np.ones_like(self.matrix) * grad_broadcast / N
+            if self.grad is None:
+                self.grad = grad_broadcast
+            else:
+                self.grad += grad_broadcast
+        out = tensor(out_matrix, _children=(self,), _operation='mean()')
+        out._backward = _backward
+        return out
+    
+    def var(self, axis=None, keepdims=False):
+        mu = self.matrix.mean(axis=axis, keepdims=True)
+        out_matrix = ((self.matrix - mu) ** 2).mean(axis=axis, dtype=np.float32, keepdims=keepdims)
+        if axis is None:
+            N = np.prod(self.shape)
+        else:
+            axes = axis if isinstance(axis, tuple) else (axis,)
+            N = np.prod([self.shape[a] for a in axes])
+        def _backward(grad):
+            grad_broadcast = grad
+            if not keepdims and axis is not None:
+                axes = axis if isinstance(axis, tuple) else (axis,)
+                for ax in sorted(axes):
+                    grad_broadcast = np.expand_dims(grad_broadcast, axis=ax)
+            grad_broadcast = np.broadcast_to(grad_broadcast, self.shape)
+            mu_broadcast = mu if keepdims or axis is None else np.broadcast_to(mu, self.shape)
+            dx = 2 * (self.matrix - mu_broadcast) * grad_broadcast / N
+            if self.grad is None:
+                self.grad = dx
+            else:
+                self.grad += dx
+
+        out = tensor(out_matrix, _children=(self,), _operation='var()')
         out._backward = _backward
         return out
     
@@ -312,6 +372,19 @@ class tensor:
             '''current._prev = set()
             current._backward = lambda grad: None
             '''
+    def clear_graph(self):
+        visited = set()
+        def _clear(node):
+            if id(node) in visited:
+                return
+            visited.add(id(node))   
+            for child in list(getattr(node, '_prev', [])):
+                _clear(child)
+            node.grad = None
+            node._prev = ()
+            node._backward = lambda grad: None
+        _clear(self)
+
 
     def cleanBackward(self):
         topo = []
@@ -383,6 +456,29 @@ class tensor:
         out = tensor(out_matrix, (self, ), 'log-softmax')
         out._backward = _backward
         return out
+    
+    def __getitem__(self, idx):
+        out_matrix = self.matrix[idx]
+
+        def _backward(grad):
+            if self.grad is None:
+                self.grad = np.zeros_like(self.matrix)
+
+            if isinstance(idx, (int, np.integer)):
+                self.grad[idx] += grad.item() if np.ndim(grad) == 0 else grad
+            elif isinstance(idx, slice) or (isinstance(idx, np.ndarray) and idx.dtype == bool):
+                self.grad[idx] += grad
+            else:
+                out_shape = self.matrix[idx].shape
+                if np.shape(grad) != out_shape:
+                    grad_broadcast = np.full(out_shape, grad)
+                else:
+                    grad_broadcast = grad
+                np.add.at(self.grad, idx, grad_broadcast)
+
+        out = tensor(out_matrix, (self,), 'getitem')
+        out._backward = _backward
+        return out
 
     def padding(self, pad_h, pad_w):
         np_padding = ((0, 0), (0, 0), (pad_h, pad_h), (pad_w, pad_w))
@@ -402,3 +498,14 @@ class tensor:
         return out
     
     __array_ufunc__ = None
+
+class FC:
+    def __init__(self, in_features, out_features):
+        self.bias = tensor.zeros((1, out_features))
+        self.weights = tensor.he_init((in_features, out_features), in_features)
+
+    def parameters(self):
+        return [self.weights, self.bias]
+
+    def __call__(self, X:tensor):
+        return (X @ self.weights) + self.bias
