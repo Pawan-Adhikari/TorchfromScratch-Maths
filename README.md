@@ -13,7 +13,10 @@ Most of the operations and their upstream gradients are derived by hand, using p
 - **05_Tensor_MLP/**: Fully connected network / Multi Layer Perceptron and housing dataset on tensor autograd.
 - **06_CNN_Vectorised/**: CNN models, training, and notes. (Trained on MNIST and CFIAR-10)
 - **07_Transformers/**: Transformer model, tensor library, and handwritten notes. (Trained on Shakespearen dataset)
+- **08_Autoencoders/**: Autoencoder architecture intrductory notes, and exploratory codes implementing it. Pursuit of understanding latent space through visualization in MNIST.
 - **99_Deployment_Tests/**: Deployment scripts and tests.
+- **npTensor/**: The pip3 package encompassing the tensor codes written in this repository.
+
 
 
 ## Getting Started
@@ -21,13 +24,19 @@ Most of the operations and their upstream gradients are derived by hand, using p
    ```bash
    git clone https://github.com/Pawan-Adhikari/MLMaths-TorchfromScratch.git
    ```
-3. Explore the notebooks and Python scripts in each module.
+2. Explore the notebooks and Python scripts in each module.
+3. Install the deeplearning package :
+   ```bash
+   pip3 install npTensor
+   ```
+4. Import and Use!
+
 
 
 ## Future Work
 - Custom CUDA kernels
 - Further Performance Optimisations
-- BPPT, RNNs, ViTs etc.
+- BPPT, RNNs, ViTs, VAEs etc.
 - Although in a different realm, we can try surrogate gradient modeling and SNNs. 
 
 
