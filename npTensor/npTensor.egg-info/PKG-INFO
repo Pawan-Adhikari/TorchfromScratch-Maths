@@ -1,0 +1,56 @@
+Metadata-Version: 2.4
+Name: npTensor
+Version: 0.1.2
+Summary: A minimal tensor and autograd library (experimental)
+Home-page: https://github.com/Pawan-Adhikari/MLMaths-TorchfromScratch
+Author: Pawan Adhikari
+Author-email: pawan.adk7@gmail.com
+License: MIT
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
+
+# npTensor
+
+**Warning: This package is experimental and not ready for production use.**
+
+npTensor is a minimal tensor and autograd library for educational and research purposes.
+
+## Installation
+
+```bash
+pip install npTensor
+```
+
+## Usage
+
+```python
+from npTensor.Tensorlib import Tensor
+```
+
+## License
+MIT
+
+## Development Status
+This package is in early development (Pre-Alpha).

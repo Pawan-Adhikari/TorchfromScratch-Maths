@@ -1,0 +1,11 @@
+LICENSE
+README.md
+setup.py
+npTensor/__init__.py
+npTensor.egg-info/PKG-INFO
+npTensor.egg-info/SOURCES.txt
+npTensor.egg-info/dependency_links.txt
+npTensor.egg-info/requires.txt
+npTensor.egg-info/top_level.txt
+npTensor/Tensorlib/Tensorlib.py
+npTensor/Tensorlib/__init__.py
