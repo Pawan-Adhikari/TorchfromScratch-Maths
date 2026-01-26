@@ -385,6 +385,14 @@ class Tensor:
             node._backward = lambda grad: None
         _clear(self)
 
+    def tanh(self):
+        num = self.exp()-((-1*self).exp())
+        den = self.exp()+((-1*self).exp())
+
+        return num/den
+
+    def sigmoid(self):
+        return 1/(1 + ((-1*self).exp()))
 
     def cleanBackward(self):
         topo = []

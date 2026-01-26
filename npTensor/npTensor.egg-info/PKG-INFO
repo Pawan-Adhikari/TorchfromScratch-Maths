@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: npTensor
-Version: 0.1.2
+Version: 0.1.5
 Summary: A minimal tensor and autograd library (experimental)
 Home-page: https://github.com/Pawan-Adhikari/MLMaths-TorchfromScratch
 Author: Pawan Adhikari
